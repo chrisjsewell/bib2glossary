@@ -33,11 +33,13 @@ def test_tex_to_dict():
 
     assert bib == [
         {
-            'key': 'otherkey',
+            'ENTRYTYPE': 'misc',
+            'ID': 'otherkey',
             'abstract': 'Abbreviation of other',
             'shorttitle': 'OTHER'},
         {
-            'key': 'thekey',
+            'ENTRYTYPE': 'misc',
+            'ID': 'thekey',
             'abstract': 'Abbreviation',
             'shorttitle': 'ABRV'}
     ]

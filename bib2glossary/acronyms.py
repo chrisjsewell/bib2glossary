@@ -8,7 +8,7 @@ _ACRONYM_STR = "\\newacronym{{{key}}}{{{abbrev}}}{{{full}}}"
 _ACRONYM_REGEX = "\\\\newacronym\\{(.*)\\}\\{(.*)\\}\\{(.*)\\}"
 
 
-def bib_to_tex(text_str,
+def bib_to_tex(text_str, entry_type=None,
                abbrev_field="shorttitle", full_field="abstract"):
     """create a list of tex acronym strings
 
@@ -16,6 +16,8 @@ def bib_to_tex(text_str,
     ----------
     text_str: str
         the .bib file text
+    entry_type: None or str
+        if given, filter by entry_type
     abbrev_field: str
         the field to use as the abbreviation
     full_key: str
@@ -35,6 +37,8 @@ def bib_to_tex(text_str,
     acronyms = []
     for key in sorted(entries.keys()):
         fields = entries.get(key)
+        if entry_type is not None and entry_type != (fields.get('ENTRYTYPE', '')):
+            continue
         acronyms.append(_ACRONYM_STR.format(
             key=key,
             abbrev=fields.get(abbrev_field),

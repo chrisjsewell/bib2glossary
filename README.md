@@ -5,7 +5,35 @@ file to a `.tex` file.
 
 To date the only other way to achieve this is *via* [bib2gls](https://tex.stackexchange.com/questions/342544/is-there-a-program-for-managing-glossary-tags). However, it implementation is somewhat complex, and the item types it uses are not supported by Zotero.
 
-In `bib2glossary`, the user may define the relationship between the reference item fields (for common fields see [here](https://www.zotero.org/support/kb/item_types_and_fields)) and glossary term inputs.
+In `bib2glossary`, the user may define the relationship between the reference item fields and glossary term parameters. The defaults are taken from the `Dictionary Entry` type in [Zotero](https://www.zotero.org/support/kb/item_types_and_fields).
+
+For `\newacronym`:
+
+| Field      | Parameter    |
+| ---------- | ------------ |
+| @type      | misc         |
+| journal*   | name         |
+| shorttitle | abbreviation |
+| abstract   | description  |
+| series     | plural       |
+| volume     | longplural   |
+| edition    | firstplural  |
+
+For `\newglossaryentry`:
+
+| Field     | Parameter   |
+| --------- | ----------- |
+| @type     | misc        |
+| journal*  | name        |
+| abstract  | description |
+| series    | plural      |
+| volume    | symbol      |
+| edition   | text        |
+| publisher | sort        |
+
+\* This shows as 'Dictionary Title' in Zotero
+
+[Note: The `title` field is not used, since it is usely used to generate the key.]
 
 ## Installation
 
@@ -46,4 +74,3 @@ or
                             the bib field defining the abbreviation (default: shorttitle)
     -f field, --full-field field
                             the bib field defining the full name (default: abstract)
-
