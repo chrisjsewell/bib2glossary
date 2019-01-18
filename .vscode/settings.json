@@ -1,0 +1,14 @@
+{
+    "python.unitTest.unittestEnabled": false,
+    "python.unitTest.pyTestEnabled": true,
+    "python.unitTest.nosetestsEnabled": false,
+    "editor.rulers": [
+        80,
+        120
+    ],
+    "python.pythonPath": "/anaconda/envs/lsr/bin/python",
+    "python.linting.pylamaEnabled": true,
+    "cSpell.enabledLanguageIds": [
+        "python"
+    ],
+}
