@@ -1,11 +1,14 @@
-import bibtexparser
 import re
+import logging
+import bibtexparser
+
+logger = logging.getLogger(__name__)
 
 _ACRONYM_STR = "\\newacronym{{{key}}}{{{abbrev}}}{{{full}}}"
 _ACRONYM_REGEX = "\\\\newacronym\\{(.*)\\}\\{(.*)\\}\\{(.*)\\}"
 
 
-def bib_to_tex(text_str: str,
+def bib_to_tex(text_str,
                abbrev_field="shorttitle", full_field="abstract"):
     """create a list of tex acronym strings
 
@@ -40,7 +43,7 @@ def bib_to_tex(text_str: str,
     return acronyms
 
 
-def tex_to_dict(text_str: str, entry_type='misc',
+def tex_to_dict(text_str, entry_type='misc',
                 abbrev_field="shorttitle", full_field="abstract"):
     """create a dictionary of bib entries
 
@@ -63,12 +66,14 @@ def tex_to_dict(text_str: str, entry_type='misc',
     """
     regex = re.compile(_ACRONYM_REGEX)
     entries = []
+    keys = []
     duplicates = {}
     for row, line in enumerate(text_str.splitlines()):
         for key, abbrev, full in regex.findall(line):
-            if key in entries:
+            if key in keys:
                 duplicates[key] = duplicates.get(key, []) + [row]
             else:
+                keys.append(key)
                 entries.append({
                     'ENTRYTYPE': entry_type,
                     'ID': key,
@@ -82,8 +87,11 @@ def tex_to_dict(text_str: str, entry_type='misc',
 def handle_duplicates(duplicates):
     """ handle duplicates
     """
-    # TODO handle duplicates
-    pass
+    msg = "Duplicate keys found on row(s): "
+    for key, rows in duplicates.items():
+        msg += "{0} for {1}; ".format(", ".join([str(i) for i in rows]), key)
+    logger.warn(msg)
+    # TODO better handling of duplicates
 
 
 def tex_to_bib(text_str: str, entry_type="misc",
