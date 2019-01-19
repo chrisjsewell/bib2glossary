@@ -68,7 +68,8 @@ def bib_to_tex(text_str, entry_type='misc',
             continue
 
         options = []
-        for param, field in param2field.items():
+        for param in sorted(param2field.keys()):
+            field = param2field[param]
             if field in fields:
                 options.append("{0}={{{1}}}".format(param, fields[field]))
         body = "{{{key}}}{{\n    {params}\n}}".format(

@@ -21,8 +21,8 @@ def test_bib_to_tex():
     glossaries = bib_to_tex(text_str)
 
     assert glossaries == [
-        '\\newglossaryentry{otherkey}{\n    name={other name},\n    description={the description of other}\n}',
-        '\\newglossaryentry{thekey}{\n    name={name},\n    description={the description}\n}'
+        '\\newglossaryentry{otherkey}{\n    description={the description of other},\n    name={other name}\n}',
+        '\\newglossaryentry{thekey}{\n    description={the description},\n    name={name}\n}'
     ]
 
 
@@ -130,12 +130,12 @@ def test_run_bib_to_tex():
     outstr = run_bib_to_tex([filepath, "--entry-type", "misc"])
     expected = """% Created by bib2glossary
 \\newglossaryentry{otherkey}{
-    name={other name},
-    description={the description of other}
+    description={the description of other},
+    name={other name}
 }
 \\newglossaryentry{thekey}{
-    name={name},
     description={the description},
+    name={name},
     sort={sortid}
 }
 """
