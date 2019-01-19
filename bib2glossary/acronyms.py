@@ -8,8 +8,8 @@ from bib2glossary.shared.parsing import (raise_IOError, parse_bib, write_bib,
                                          extract_parameters,
                                          create_msg_error,
                                          create_msg_duplicates)
-from bib2glossary.shared.exec import (run_tex_to_bib_shared,
-                                      run_bib_to_tex_shared)
+from bib2glossary.shared.execution import (run_tex_to_bib_shared,
+                                           run_bib_to_tex_shared)
 
 logger = logging.getLogger(__name__)
 
