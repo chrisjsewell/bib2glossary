@@ -14,10 +14,6 @@ from bib2glossary.utils import ErrorParser, StoreDict, setup_logger
 
 logger = logging.getLogger(__name__)
 
-# _FULL_REGEX = "\\\\newacronym\\[(.*)\\]\\{(.*)\\}\\{(.*)\\}\\{(.*)\\}"
-# _NO_OPTION_REGEX = "\\\\newacronym\\{(.*)\\}\\{(.*)\\}\\{(.*)\\}"
-# _OPTIONS_REGEX = "^\\s*([^\\s^\\=]+)\\s*\\=\\s*(.*)$"
-
 _DEFAULTP2F = (("abbreviation", "shorttitle"),
                ("longname", "journal"),
                ("description", "abstract"),
@@ -251,58 +247,6 @@ def tex_to_dict(text_str, entry_type='misc',
         entries.append(entry)
 
     return entries, duplicates
-
-# TODO delete
-    # regex_no_opt = re.compile(_NO_OPTION_REGEX, re.MULTILINE | re.DOTALL)
-    # regex_full = re.compile(_FULL_REGEX, re.MULTILINE | re.DOTALL)
-    # regex_opts = re.compile(_OPTIONS_REGEX)
-
-#     for key, abbrev, full in regex_no_opt.findall(text_str):
-
-#         key, abbrev, full = _clean_strs(key, abbrev, full)
-
-#         if key in keys:
-#             duplicates.append(key)
-#         else:
-#             keys.append(key)
-#             entries.append({
-#                 'ENTRYTYPE': entry_type,
-#                 'ID': key,
-#                 abbrev_field: abbrev,
-#                 name_field: full
-#             })
-
-#     for options, key, abbrev, full in regex_full.findall(text_str):
-
-#         options, key, abbrev, full = _clean_strs(options, key, abbrev, full)
-
-#         if key in keys:
-#             duplicates.append(key)
-#         else:
-#             entry = {
-#                 'ENTRYTYPE': entry_type,
-#                 'ID': key,
-#                 abbrev_field: abbrev,
-#                 name_field: full
-#             }
-#             for opt_str in options.split(","):
-#                 if len(regex_opts.findall(opt_str)) != 1:
-#                     logger.warn(
-#                         "could not parse option: {}".format(opt_str))
-#                     continue
-#                 pname, pval = regex_opts.findall(opt_str)[0]
-#                 if pval.startswith("{") and pval.endswith("}"):
-#                     pval = pval[1:-1]
-#                 if pname not in param2field:
-#                     logger.warn(
-#                         "option '{0}' in key '{1}' not recognised".format(pname, key))
-#                     continue
-#                 entry[param2field[pname]] = pval
-
-#             keys.append(key)
-#             entries.append(entry)
-
-#     return entries, duplicates
 
 
 def duplicates_msg(duplicates):
