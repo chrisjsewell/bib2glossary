@@ -1,0 +1,27 @@
+language: python
+python:
+- '2.7'
+- '3.6'
+before_install:
+- pip install -U pip setuptools wheel
+install:
+- travis_wait pip install -r requirements.txt
+- pip install -r test_requirements.txt
+- pip install -e .
+- pip install --quiet coverage
+- pip install --quiet coveralls
+script:
+- pytest -v --doctest-modules --ignore=setup.py --cov=. --cov-report=
+after_success:
+- coveralls
+
+deploy:
+  - provider: pypi
+    distributions: bdist_wheel
+    user: cjsewell
+    password:
+      secure: LdAevvJpfJbTPg9nD3/TCWz+Uh5vZL7UBXJBGxGsAnj8LMPQi/JfN2BQKtF3bBEQMyw6aOYgTO72jtNEfgrX89SQZ+UodE4gGD1Mj4iklP3KDaGrfrwifYV2os88u7tXGLBbPcqvGnJGuqW7ODNcYzphJ1OmOoVL+WLEIs+bjzNjLFWo+T23RHt91zHd4T3k3pgenzBZS/+fLuFfFeaEbRrMfTyTm74ZE8BjUBPKt11jqzO71IG69a54vWvO8dOtTzFMKKJeuLvWoU+/o/xWt2fBTqSfPyPGu1vlua2Gq1DdTo0L/6fuhf4k6mWvFvNopMIrANI7+gGqHbKV4I6TVmMWfQbStGyWQyA8kWi9X/INUa4vRuMafQwX5jXmzQI6+XAnYhu0wiJ8/JZmQLO7FuTObQRia2jOqdCORYldrJsRoUUnPXZFLp8hrqRwg9lTrTPB4Y4WLqi82pxprgEPzAKgyvZQ8fcXqlsd7q+mRKlvvUIl3jgT9pa9/DiIEiQtdlKlC6UcHEbM4OMtZ273yFZFUouusl+uj+POq46+S5rKA5a5sVbXXTG3vlDCa5iDsG2onTxeGsLWJcur9fIufEusn55D6pJ6MA1+9M20c5LX2knyEsHw5NUCxlURshLkXd9H7myQh7hYF78F7FdjwMYs3sk0ugl5gDgGp6IXCi0=
+    on: 
+      branch: master
+      tags: true
+      condition: $TRAVIS_PYTHON_VERSION = "3.6"
