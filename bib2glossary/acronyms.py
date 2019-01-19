@@ -1,16 +1,17 @@
 import logging
 import os
 import argparse
-from collections import deque
-import json
 
 import bibtexparser
 from TexSoup import TexSoup
-from TexSoup.utils import TokenWithPosition
-from TexSoup.data import RArg, OArg
-from six import ensure_str
+from TexSoup.data import OArg
 
-from bib2glossary.utils import ErrorParser, StoreDict, setup_logger
+from bib2glossary.shared import (raise_IOError,
+                                 extract_required,
+                                 extract_options,
+                                 create_msg_error, create_msg_duplicates,
+                                 read_param2field)
+from bib2glossary.argparse_utils import ErrorParser, setup_logger
 
 logger = logging.getLogger(__name__)
 
@@ -89,67 +90,6 @@ def bib_to_tex(text_str, entry_type='misc',
     return acronyms
 
 
-def _clean_str(string):
-    return " ".join(string.splitlines()).strip()
-
-
-def create_error_msg(msg, node=None, row=None):
-    text = msg.strip()
-    if row is not None:
-        text = "(row {}) ".format(row) + text
-    if node is not None:
-        text = text + ": {}".format(node)
-    return text
-
-
-def read_required(rarg):
-    if not isinstance(rarg, RArg):
-        raise ValueError(
-            "expected {} to be a required argument".format(type(rarg)))
-    return rarg.value
-
-
-def read_parameters(expressions):
-    """read the parameters from a TexSoup expression"""
-    expressions = deque(expressions)
-    param_name = None
-    params = {}
-    errors = []
-    while expressions:
-        expr = expressions.popleft()
-        if isinstance(expr, TokenWithPosition):
-            # TODO is this the best way to extract parameter name?
-            param_name = expr.text.replace(",", "").replace("=", "").strip()
-        elif isinstance(expr, RArg):
-            if param_name is None:
-                errors.append(
-                    "expected expression "
-                    "'{}' to precede a parameter name".format(expr))
-                break
-            if param_name in params:
-                errors.append(
-                    "parameter '{}' already defined".format(param_name))
-            else:
-                params[param_name] = expr.value
-            param_name = None
-        else:
-            errors.append(
-                "expected expression '{}' ".format(expr) +
-                "to be a parameter name or required argument")
-            break
-
-    if param_name is not None:
-        pass  # allowed since last expr may be new line
-        # errors.append(
-        #     "parameter '{}' is not assigned a value".format(param_name))
-
-    return params, errors
-
-
-def raise_IOError(msg):
-    raise IOError
-
-
 def tex_to_dict(text_str, entry_type='misc',
                 param2field=None, warning_handler=None):
     """create a dictionary of bib entries
@@ -197,36 +137,39 @@ def tex_to_dict(text_str, entry_type='misc',
         entry = {'ENTRYTYPE': entry_type}
 
         if len(arguments) < 3:
-            msg = create_error_msg(
+            msg = create_msg_error(
                 "could not parse acronym (too few arguments)", acronym, row)
             warning_handler(msg)
             continue
         if len(arguments) > 4:
-            msg = create_error_msg(
+            msg = create_msg_error(
                 "could not parse acronym (too many arguments)", acronym, row)
             warning_handler(msg)
             continue
 
-        key = read_required(arguments[-3])
+        key = extract_required(arguments[-3])
         if key in keys:
             duplicates[key] = duplicates.get(key, []) + [row]
             continue
 
         entry['ID'] = key
-        entry[abbrev_field] = read_required(arguments[-2])
-        entry[name_field] = read_required(arguments[-1])
+        entry[abbrev_field] = extract_required(arguments[-2])
+        entry[name_field] = extract_required(arguments[-1])
 
         if len(arguments) == 4:
             opts = arguments[0]
+
             if not isinstance(opts, OArg):
-                msg = create_error_msg(
+                msg = create_msg_error(
                     "expected first argument to be 'optional",
                     acronym, row)
                 warning_handler(msg)
                 continue
-            opt_params, errors = read_parameters(opts.exprs)
+
+            opt_params, errors = extract_options(opts)
+
             for error in errors:
-                msg = create_error_msg(
+                msg = create_msg_error(
                     "error reading 'optional' block: {}".format(error),
                     acronym, row)
                 warning_handler(msg)
@@ -247,21 +190,6 @@ def tex_to_dict(text_str, entry_type='misc',
         entries.append(entry)
 
     return entries, duplicates
-
-
-def duplicates_msg(duplicates):
-    """ handle duplicates
-    """
-    dupes = []
-    for key, rows in duplicates.items():
-        row_str = ", ".join([str(row) for row in rows if row is not None])
-        if row_str:
-            dupes.append("{0} (rows: {1})".format(key, row_str))
-        else:
-            dupes.append(str(key))
-    msg = "Duplicate keys found: " + ", ".join(dupes)
-
-    return msg
 
 
 def tex_to_bib(text_str, entry_type="misc",
@@ -293,7 +221,7 @@ def tex_to_bib(text_str, entry_type="misc",
                                       warning_handler=warning_handler)
 
     if duplicates:
-        msg = duplicates_msg(duplicates)
+        msg = create_msg_duplicates(duplicates)
         warning_handler(msg)
 
     bib_database = bibtexparser.bibdatabase.BibDatabase()
@@ -306,22 +234,6 @@ def tex_to_bib(text_str, entry_type="misc",
     bibtex_str = bibtexparser.dumps(bib_database, writer)
 
     return bibtex_str
-
-
-def get_param2field(options):
-    """read json path to get param2field dict"""
-    param2field = {}
-    if options.get('param2field', False):
-        jpath = os.path.abspath(options.get('param2field'))
-        if not os.path.exists(jpath):
-            raise IOError('json path does not exist: {}'.format(jpath))
-        with open(jpath) as file_obj:
-            jdata = json.load(file_obj)
-        # validate
-        assert isinstance(jdata, dict)
-        for key, val in jdata.items():
-            param2field[ensure_str(key)] = ensure_str(val)
-    return param2field
 
 
 def run_tex_to_bib(sys_args):
@@ -356,7 +268,7 @@ def run_tex_to_bib(sys_args):
 
     param2field = {}
     try:
-        param2field = get_param2field(options)
+        param2field = read_param2field(options)
     except Exception as err:
         logger.critical(err)
         return ''
@@ -405,7 +317,7 @@ def run_bib_to_tex(sys_args):
         return ''
 
     try:
-        param2field = get_param2field(options)
+        param2field = read_param2field(options)
     except Exception as err:
         logger.critical(err)
         return ''
