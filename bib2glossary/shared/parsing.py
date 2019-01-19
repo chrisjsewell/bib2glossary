@@ -1,8 +1,6 @@
-import os
 from collections import deque
-import json
 
-from six import ensure_str
+import bibtexparser
 from TexSoup.utils import TokenWithPosition
 from TexSoup.data import RArg, OArg, TexNode
 
@@ -46,7 +44,27 @@ def create_msg_duplicates(duplicates):
     return msg
 
 
-def extract_required(rarg):
+def write_bib(entries):
+    bib_database = bibtexparser.bibdatabase.BibDatabase()
+    bib_database.entries = entries
+
+    writer = bibtexparser.bwriter.BibTexWriter()
+    writer.contents = ['comments', 'entries']
+    writer.indent = '  '
+    writer.order_entries_by = ('ENTRYTYPE', 'author', 'year')
+    bibtex_str = bibtexparser.dumps(bib_database, writer)
+    return bibtex_str
+
+
+def parse_bib(text_str):
+    parser = bibtexparser.bparser.BibTexParser()
+    bib = parser.parse(text_str)
+    # TODO doesn't appear to check for key duplication
+    entries = bib.get_entry_dict()
+    return entries
+
+
+def extract_required_val(rarg):
     """extract the value of a TexSoup RArg"""
     if not isinstance(rarg, RArg):
         raise ValueError(
@@ -54,7 +72,7 @@ def extract_required(rarg):
     return rarg.value
 
 
-def extract_parameters(texsoup_exprs):
+def _extract_parameters(texsoup_exprs):
     """extract the parameters from a TexSoup expression list"""
     expressions = deque(texsoup_exprs)
     param_name = None
@@ -91,29 +109,14 @@ def extract_parameters(texsoup_exprs):
     return params, errors
 
 
-def extract_options(options):
-    """extract parameters from a TexSoup OArg"""
+def extract_parameters(argument):
+    """extract parameters from a TexSoup OArg or Arg"""
 
-    if not isinstance(options, OArg):
+    if not isinstance(argument, (OArg, RArg)):
         raise ValueError(
-            "expected {} to be of type OArg".format(type(options)))
+            "expected {} to be of type OArg or RArg".format(type(argument)))
 
-    opt_params, errors = extract_parameters(options.exprs)
+    opt_params, errors = _extract_parameters(argument.exprs)
 
     return opt_params, errors
 
-
-def read_param2field(options):
-    """read json path to get param2field dict"""
-    param2field = {}
-    if options.get('param2field', False):
-        jsonpath = os.path.abspath(options.get('param2field'))
-        if not os.path.exists(jsonpath):
-            raise IOError('json path does not exist: {}'.format(jsonpath))
-        with open(jsonpath) as file_obj:
-            jsondata = json.load(file_obj)
-        # validate
-        assert isinstance(jsondata, dict)
-        for key, val in jsondata.items():
-            param2field[ensure_str(key)] = ensure_str(val)
-    return param2field

@@ -2,7 +2,7 @@
 
 This package is intended to allow for the storage and management of
 [latex glossary terms](https://en.wikibooks.org/wiki/LaTeX/Glossary)
-in standard reference management packages (such as Zotero and Mendeley),
+in standard reference management packages (such as Zotero),
 by converting between `.bib` files
 and `.tex` files containing `\newglossaryentry` or `\newacronym` definitions.
 
@@ -29,8 +29,8 @@ For `\newacronym`:
 | abbreviation | shorttitle |
 | description  | abstract   |
 | plural       | series     |
-| longplural   | volume     |
-| firstplural  | edition    |
+| longplural   | isbn       |
+| firstplural  | address**  |
 
 For `\newglossaryentry`:
 
@@ -46,6 +46,8 @@ For `\newglossaryentry`:
 
 \* This shows as 'Dictionary Title' in Zotero
 
+\*\* This shows as 'Place' in Zotero
+
 [Note: The `title` field is not used, since it is usely used to generate the key.]
 
 ## Installation
@@ -54,7 +56,7 @@ For `\newglossaryentry`:
 
 ## Usage
 
-Currently only conversion of `\newacronym` is implemented:
+Conversion of `\newacronym`:
 
     >> bib2acronym --help
     >> bib2acronym path/to/file.bib --entry-type misc --param2field path/to/file.json
@@ -63,6 +65,16 @@ or
 
     >> acronym2bib --help
     >> acronym2bib path/to/file.tex --entry-type misc --param2field path/to/file.json
+
+Conversion of `\newglossaryentry`:
+
+    >> bib2glossary --help
+    >> bib2glossary path/to/file.bib --entry-type misc --param2field path/to/file.json
+
+or
+
+    >> glossary2bib --help
+    >> glossary2bib path/to/file.tex --entry-type misc --param2field path/to/file.json
 
 ## Implementation
 

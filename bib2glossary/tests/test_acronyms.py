@@ -95,7 +95,7 @@ def test_tex_to_dict_with_options():
             'journal': 'Abbreviation',
             'shorttitle': 'ABRV',
             'series': 'ABRVs',
-            'volume': 'Abbreviations'
+            'isbn': 'Abbreviations'
         }
     ]
 

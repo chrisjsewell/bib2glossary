@@ -1,29 +1,28 @@
 import logging
 
 from TexSoup import TexSoup
-from TexSoup.data import OArg
 
 from bib2glossary.shared.parsing import (raise_IOError, parse_bib, write_bib,
-                                         extract_required_val,
-                                         extract_parameters,
                                          create_msg_error,
-                                         create_msg_duplicates)
+                                         create_msg_duplicates,
+                                         extract_required_val,
+                                         extract_parameters)
 from bib2glossary.shared.exec import (run_tex_to_bib_shared,
                                       run_bib_to_tex_shared)
 
 logger = logging.getLogger(__name__)
 
-_DEFAULTP2F = (("abbreviation", "shorttitle"),
-               ("longname", "journal"),
+_DEFAULTP2F = (("name", "journal"),
                ("description", "abstract"),
                ("plural", "series"),
-               ("longplural", "isbn"),
-               ("firstplural", "address"))
+               ("symbol", "volume"),
+               ("text", "edition"),
+               ("sort", "publisher"))
 
 
 def bib_to_tex(text_str, entry_type='misc',
                param2field=None):
-    """create a list of tex newacronym strings
+    """create a list of tex newglossaryentry strings
 
     Parameters
     ----------
@@ -32,11 +31,11 @@ def bib_to_tex(text_str, entry_type='misc',
     entry_type: None or str
         if given, filter by entry_type
     param2field: None or dict
-        mapping of abbreviation parameter to bib field
+        mapping of glossaries parameter to bib field
 
     Returns
     -------
-    acronyms: a list of string
+    glossaries: a list of string
 
     """
     param2field_default = dict(_DEFAULTP2F)
@@ -44,14 +43,14 @@ def bib_to_tex(text_str, entry_type='misc',
         param2field_default.update(param2field)
     param2field = param2field_default.copy()
 
-    assert "abbreviation" in param2field
-    assert "longname" in param2field
-    abbrev_field = param2field.pop("abbreviation")
-    name_field = param2field.pop("longname")
+    assert "description" in param2field
+    assert "name" in param2field
+    name_field = param2field.get("name")
+    descript_field = param2field.get("description")
 
     entries = parse_bib(text_str)
 
-    acronyms = []
+    glossaries = []
     for key in sorted(entries.keys()):
 
         fields = entries.get(key)
@@ -59,29 +58,26 @@ def bib_to_tex(text_str, entry_type='misc',
         if entry_type and entry_type != (fields.get('ENTRYTYPE', '')):
             continue
 
-        if abbrev_field not in fields:
-            logger.warn("Skipping {0}: No {1} key found".format(
-                key, abbrev_field))
-            continue
         if name_field not in fields:
             logger.warn(
                 "Skipping {0}: No {1} key found".format(key, name_field))
             continue
+        if descript_field not in fields:
+            logger.warn("Skipping {0}: No {1} key found".format(
+                key, descript_field))
+            continue
 
-        body = "{{{key}}}{{{abbreviation}}}{{{name}}}".format(
-            key=key,
-            abbreviation=fields[abbrev_field],
-            name=fields[name_field])
         options = []
         for param, field in param2field.items():
             if field in fields:
                 options.append("{0}={{{1}}}".format(param, fields[field]))
-        if options:
-            body = "[" + ",".join(options) + "]" + body
+        body = "{{{key}}}{{\n    {params}\n}}".format(
+            key=key,
+            params=",\n    ".join(options))
 
-        acronyms.append("\\newacronym"+body)
+        glossaries.append("\\newglossaryentry"+body)
 
-    return acronyms
+    return glossaries
 
 
 def tex_to_dict(text_str, entry_type='misc',
@@ -112,11 +108,6 @@ def tex_to_dict(text_str, entry_type='misc',
     if param2field is not None:
         param2field_default.update(param2field)
     param2field = param2field_default.copy()
-    assert "abbreviation" in param2field
-    assert "longname" in param2field
-
-    abbrev_field = param2field.pop("abbreviation")
-    name_field = param2field.pop("longname")
 
     entries = []
     keys = []
@@ -124,62 +115,44 @@ def tex_to_dict(text_str, entry_type='misc',
 
     latex_tree = TexSoup(text_str)
 
-    for acronym in latex_tree.find_all("newacronym"):
+    for gterm in latex_tree.find_all("newglossaryentry"):
 
         row = None  # TODO get first row (for error reporting)
-        arguments = list(acronym.args)
+        arguments = list(gterm.args)
         entry = {'ENTRYTYPE': entry_type}
 
-        if len(arguments) < 3:
+        if len(arguments) != 2:
             msg = create_msg_error(
-                "could not parse acronym (too few arguments)", acronym, row)
-            warning_handler(msg)
-            continue
-        if len(arguments) > 4:
-            msg = create_msg_error(
-                "could not parse acronym (too many arguments)", acronym, row)
+                "could not parse glossary entry (arguments != 2)", gterm, row)
             warning_handler(msg)
             continue
 
-        key = extract_required_val(arguments[-3])
+        key = extract_required_val(arguments[0])
         if key in keys:
             duplicates[key] = duplicates.get(key, []) + [row]
             continue
-
         entry['ID'] = key
-        entry[abbrev_field] = extract_required_val(arguments[-2])
-        entry[name_field] = extract_required_val(arguments[-1])
 
-        if len(arguments) == 4:
-            options = arguments[0]
+        params, errors = extract_parameters(arguments[1])
 
-            if not isinstance(options, OArg):
-                msg = create_msg_error(
-                    "expected first argument to be 'optional",
-                    acronym, row)
-                warning_handler(msg)
+        for error in errors:
+            msg = create_msg_error(
+                "error reading 'parameter' block: {}".format(error),
+                gterm, row)
+            warning_handler(msg)
+
+        for param_name, param_value in params.items():
+            if param_name not in param2field:
+                warning_handler(
+                    "parameter '{0}' in key '{1}' not recognised".format(
+                        param_name, key))
                 continue
-
-            opt_params, errors = extract_parameters(options)
-
-            for error in errors:
-                msg = create_msg_error(
-                    "error reading 'optional' block: {}".format(error),
-                    acronym, row)
-                warning_handler(msg)
-
-            for opt_name, opt_value in opt_params.items():
-                if opt_name not in param2field:
-                    warning_handler(
-                        "option '{0}' in key '{1}' not recognised".format(
-                            opt_name, key))
-                    continue
-                if param2field[opt_name] in entry:
-                    warning_handler(
-                        "duplicate parameter '{0}' in key '{1}'".format(
-                            opt_name, key))
-                    continue
-                entry[param2field[opt_name]] = opt_value
+            if param2field[param_name] in entry:
+                warning_handler(
+                    "duplicate parameter '{0}' in key '{1}'".format(
+                        param_name, key))
+                continue
+            entry[param2field[param_name]] = param_value
 
         entries.append(entry)
 
@@ -226,7 +199,7 @@ def tex_to_bib(text_str, entry_type="misc",
 def run_tex_to_bib(sys_args):
     """ """
     return run_tex_to_bib_shared(sys_args,
-                                 "newacronym",
+                                 "newglossaryentry",
                                  tex_to_bib,
                                  logger)
 
@@ -234,6 +207,6 @@ def run_tex_to_bib(sys_args):
 def run_bib_to_tex(sys_args):
     """ """
     return run_bib_to_tex_shared(sys_args,
-                                 "newacronym",
+                                 "newglossaryentry",
                                  bib_to_tex,
                                  logger)

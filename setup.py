@@ -48,5 +48,8 @@ setup(
     zip_safe=True,
     include_package_data=True,
     package_data={},
-    scripts=['bin/acronym2bib', 'bin/bib2acronym'],
+    scripts=['bin/acronym2bib',
+             'bin/bib2acronym',
+             'bin/glossary2bib',
+             'bin/bib2glossary'],
 )
