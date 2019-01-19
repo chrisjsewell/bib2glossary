@@ -19,6 +19,7 @@ setup(
     description='A small package to convert between a '
                 'latex bib file and a tex file containing glossaries entries',
     long_description=description,
+    python_requires='>=3',  # TexSoup breaks python 2 compatibility
     install_requires=requirements,
     tests_require=test_requirements,
     license='GPL',
@@ -28,14 +29,10 @@ setup(
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Environment :: Console',
-        'Environment :: Web Environment',
         'Intended Audience :: End Users/Desktop',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
-        'Programming Language :: Python',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.2',
         'Programming Language :: Python :: 3.3',
