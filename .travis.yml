@@ -7,8 +7,8 @@ env:
     - python: '3.6'
 matrix:
   allow_failures:
-    - env: python: '3.4'
-    - env: python: '3.5'
+    - python: '3.4'
+    - python: '3.5'
 
 before_install:
 - pip install -U pip setuptools wheel
