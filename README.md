@@ -1,5 +1,7 @@
 # bib2glossary
 
+[![Build Status](https://travis-ci.org/chrisjsewell/bib2glossary.svg?branch=master)](https://travis-ci.org/chrisjsewell/bib2glossary)
+
 This package is intended to allow for the storage and management of
 [latex glossary terms](https://en.wikibooks.org/wiki/LaTeX/Glossary)
 in standard reference management packages (such as Zotero),

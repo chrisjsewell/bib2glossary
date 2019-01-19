@@ -16,9 +16,10 @@ with io.open('README.md') as readme:
 setup(
     name='bib2glossary',
     version=import_module('bib2glossary').__version__,
-    description='A small package to convert between a '
+    description='A package to convert between a '
                 'latex bib file and a tex file containing glossaries entries',
     long_description=description,
+    long_description_content_type='text/markdown',
     python_requires='>=3',  # TexSoup breaks python 2 compatibility
     install_requires=requirements,
     tests_require=test_requirements,
