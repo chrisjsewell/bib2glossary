@@ -1,1 +1,3 @@
+six>=1.12.0
 bibtexparser>=0.6.2
+texsoup>=0.1.4

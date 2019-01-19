@@ -1,35 +1,48 @@
 # bib2glossary
 
-This package is intended to allow for the storage and management of [latex glossary terms](https://en.wikibooks.org/wiki/LaTeX/Glossary) in standard reference management packages (such as Zotero and Mendeley), by converting a `.bib`
-file to a `.tex` file.
+This package is intended to allow for the storage and management of
+[latex glossary terms](https://en.wikibooks.org/wiki/LaTeX/Glossary)
+in standard reference management packages (such as Zotero and Mendeley),
+by converting between `.bib` files
+and `.tex` files containing `\newglossaryentry` or `\newacronym` definitions.
 
 To date the only other way to achieve this is *via* [bib2gls](https://tex.stackexchange.com/questions/342544/is-there-a-program-for-managing-glossary-tags). However, it implementation is somewhat complex, and the item types it uses are not supported by Zotero.
 
-In `bib2glossary`, the user may define the relationship between the reference item fields and glossary term parameters. The defaults are taken from the `Dictionary Entry` type in [Zotero](https://www.zotero.org/support/kb/item_types_and_fields).
+In `bib2glossary`, the user may override the default relationships between
+reference item fields and glossary term parameters,
+by supplying a JSON file, e.g.:
+
+```json
+{
+    "abbreviation": "abbrevfield"
+}
+```
+
+The defaults are taken from the `Dictionary Entry` type in [Zotero](https://www.zotero.org/support/kb/item_types_and_fields).
 
 For `\newacronym`:
 
-| Field      | Parameter    |
-| ---------- | ------------ |
-| @type      | misc         |
-| journal*   | name         |
-| shorttitle | abbreviation |
-| abstract   | description  |
-| series     | plural       |
-| volume     | longplural   |
-| edition    | firstplural  |
+| Parameter    | Field      |
+| ------------ | ---------- |
+| misc         | @type      |
+| longname     | journal*   |
+| abbreviation | shorttitle |
+| description  | abstract   |
+| plural       | series     |
+| longplural   | volume     |
+| firstplural  | edition    |
 
 For `\newglossaryentry`:
 
-| Field     | Parameter   |
-| --------- | ----------- |
-| @type     | misc        |
-| journal*  | name        |
-| abstract  | description |
-| series    | plural      |
-| volume    | symbol      |
-| edition   | text        |
-| publisher | sort        |
+| Parameter   | Field     |
+| ----------- | --------- |
+| misc        | @type     |
+| name        | journal*  |
+| description | abstract  |
+| plural      | series    |
+| symbol      | volume    |
+| text        | edition   |
+| sort        | publisher |
 
 \* This shows as 'Dictionary Title' in Zotero
 
@@ -44,33 +57,14 @@ For `\newglossaryentry`:
 Currently only conversion of `\newacronym` is implemented:
 
     >> bib2acronym --help
-    usage: bib2acronym [-h] [-a field] [-f field] filepath
-
-    convert a bibtex file to a tex file containing acronym definitions
-
-    positional arguments:
-    filepath              bibtex file path
-
-    optional arguments:
-    -h, --help            show this help message and exit
-    -a field, --abbrev-field field
-                            the bib field defining the abbreviation (default: shorttitle)
-    -f field, --full-field field
-                            the bib field defining the full name (default: abstract)
+    >> bib2acronym path/to/file.bib --entry-type misc --param2field path/to/file.json
 
 or
 
     >> acronym2bib --help
-    usage: acronym2bib [-h] [-a field] [-f field] filepath
+    >> acronym2bib path/to/file.tex --entry-type misc --param2field path/to/file.json
 
-    convert a tex file containing acronym definitions to a bibtex file
+## Implementation
 
-    positional arguments:
-    filepath              tex file path
-
-    optional arguments:
-    -h, --help            show this help message and exit
-    -a field, --abbrev-field field
-                            the bib field defining the abbreviation (default: shorttitle)
-    -f field, --full-field field
-                            the bib field defining the full name (default: abstract)
+- Parsing of `tex` files is handled by [TexSoup](https://github.com/alvinwan/TexSoup)
+- Parsing of `bib` files is handled by [BibtexParser](https://bibtexparser.readthedocs.io)
